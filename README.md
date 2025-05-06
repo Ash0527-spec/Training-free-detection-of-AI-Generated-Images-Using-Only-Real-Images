@@ -1,39 +1,20 @@
 # Training-free-detection-of-AI-Generated-Images-Using-Only-Real-Images
 
-The rapid advancement of image generation technologies has led to highly realistic synthetic images, which pose a threat to public trust and security. In real-world scenarios where the generative model behind a fake image is unknown, an effective detector should be capable of identifying out-of-distribution generated images. Current methods typically focus on identifying common artifacts across different generative models. However, these methods often erase a substantial portion of image information, resulting in detection failures even when fakes are visually distinguishable. Our experiments show that autoregressive features are effective for detecting generated images, allowing us to eliminate the reliance on artifacts and preserve the image information. Building on this finding, we propose Universal Autoregressive Detection (UAR), which is trained exclusively on real images. We generate negative samples by reconstructing real images with a variational autoencoder (VAE), rather than using AI-generated images. UAR achieves an average accuracy of 94.48% across 16 generative models, surpassing the state-of-the-art (SoTA) by 2.79%. Additionally, UAR exhibits stable performance under various perturbations.
+The rapid advancement of image generation technologies has led to highly realistic synthetic images, whose spread poses a threat to public trust and security. In real-world scenarios, where the generative model behind a fake image is unknown, an effective detector should be capable of identifying out-of-distribution generated images. Current methods typically focus on identifying common artifacts across different generative models. However, these methods often erase a substantial portion of image information, resulting in detection failures even when fakes are visually distinguishable. Our experiments show that autoregressive features are effective for detecting generated images, allowing us to eliminate the reliance on artifacts and preserve the image information. Building on this finding, we propose Real-based Autoregressive Image Detector (RAID), a training-free method that relies exclusively on real images. We generate anomalous samples by reconstructing real images with a variational autoencoder (VAE), rather than using AI-generated images. RAID achieves an average accuracy of 93.07\% across 18 generative models, surpassing the SoTA by 2.36\%. RAID demonstrates robust performance under various perturbations, with a particularly notable 20.02\% improvement in detection accuracy under common JPEG compression compared to the SoTA. 
 
-## Environment Setup
-
-To create the environment and install the necessary dependencies, use the following commands:
-
-```bash
-# Create a virtual environment named UAR with Python version 3.10.15
-conda create -n UAR python==3.10.15
-conda activate UAR
-
-# Install PyTorch with CUDA 11.8 support, along with torchvision and torchaudio
-pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
-
-# Install other package
-pip install opencv-python
-pip install tqdm
-pip install transformers==4.47.0
-
-```
 
 ## Feature Extraction
-We use **AIMv1** to extract image features. The original code can be found at [AIM GitHub repository](https://github.com/apple/ml-aim).  
+We use **AIMv1** to extract image features. The original code can be found at [AIM GitHub repository](https://github.com/apple/ml-aim). We made certain modifications to simplify the environment configuration.
 
-We made certain modifications to simplify the environment configuration. The modified version is stored in the `UAR/aim` directory.
+You can use `resultx_important_indices.npy` to select features for SVM
 
 ```bash
-cd UAR
 
 # Download the AIM model checkpoint for the backbone weights
-wget -O aim_3b_5bimgs_attnprobe_backbone.pth "https://cdn-lfs-us-1.hf.co/repos/1d/1f/1d1f735a636a3cee919e7ab99cb59ab0608b7194e5f6e3569464ab1f9fb28032/8475ce4e4b2b618403d267393f4fac00f614f3bad26b8389506e7762b394260a?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27aim_3b_5bimgs_attnprobe_backbone.pth%3B+filename%3D%22aim_3b_5bimgs_attnprobe_backbone.pth%22%3B&Expires=1737077195&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczNzA3NzE5NX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy11cy0xLmhmLmNvL3JlcG9zLzFkLzFmLzFkMWY3MzVhNjM2YTNjZWU5MTllN2FiOTljYjU5YWIwNjA4YjcxOTRlNWY2ZTM1Njk0NjRhYjFmOWZiMjgwMzIvODQ3NWNlNGU0YjJiNjE4NDAzZDI2NzM5M2Y0ZmFjMDBmNjE0ZjNiYWQyNmI4Mzg5NTA2ZTc3NjJiMzk0MjYwYT9yZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPSoifV19&Signature=ba-u3ubj1C5bgZuUF3yiYswd9xUbc-odrm79e29mAA3sVeCBZhrQ-LnFDIVeq8scMcBOeL2TAK4AHhAQGjz5lHRpOuqF6g3TciT9g42ptQh2w8EGgVP%7EBVGCQ%7E436t5yQ0SvyxXPO%7EJQldooJvaZF-FVMGBY6esaW8GxgVHmQRzcQ6KJD9-dUUGp5fcX7NgIP-qNw95he2PZ-E1ma%7Eui-0kApum%7EL7MMqtR8H9lK6uYMXpQJwvzYxeLaetZh9V6BGjviBKQNr0QbIHB7VHxSDIvfV2p9EN9qLtz1-IyQALZYTIOJBdlXt2tcmRYB229HxkxKKN3agz0oGQvQOFNOIA__&Key-Pair-Id=K24J24Z295AEI9"
+wget -O aim_3b_5bimgs_attnprobe_backbone.pth <url of aim_3b_5bimgs_attnprobe_backbone> # the url can be found at https://github.com/apple/ml-aim/tree/main/aim-v1
 
 # Download the second AIM model checkpoint for the head layer weights (best layers)
-wget -O aim_3b_5bimgs_attnprobe_head_best_layers.pth "https://cdn-lfs-us-1.hf.co/repos/1d/1f/1d1f735a636a3cee919e7ab99cb59ab0608b7194e5f6e3569464ab1f9fb28032/ad380e16491c30513e7bae84e7b7569272f46b3989e87011ee2574e4bc775586?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27aim_3b_5bimgs_attnprobe_head_best_layers.pth%3B+filename%3D%22aim_3b_5bimgs_attnprobe_head_best_layers.pth%22%3B&Expires=1737077208&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczNzA3NzIwOH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy11cy0xLmhmLmNvL3JlcG9zLzFkLzFmLzFkMWY3MzVhNjM2YTNjZWU5MTllN2FiOTljYjU5YWIwNjA4YjcxOTRlNWY2ZTM1Njk0NjRhYjFmOWZiMjgwMzIvYWQzODBlMTY0OTFjMzA1MTNlN2JhZTg0ZTdiNzU2OTI3MmY0NmIzOTg5ZTg3MDExZWUyNTc0ZTRiYzc3NTU4Nj9yZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPSoifV19&Signature=m7S8q%7EH2ABIxtMdGyNih4ixwSrhQHZ9ARilGCVqYOdFeT4f5gW8UGrSoJ1FayJu2yjgjxu3BS0YOeuzYIP9oLEaDnzF-pp3%7EmajbiwImxVvrY2KKtX0jE89dQ3SqjFHrEzeVDrIDt-uEOIdvXFh8m%7EEGyTAb2-OqZ8Gl1pJzWOQLnvT4m-ukU7i9RnH0Ej5OVpBcoyfULgZrJ7a3J%7ETxHstUlWmOwJreAFjRztzMWn-V88VwJD8bavuYmUxkNKIgJ3-9xYldGsCg5mpKPDW4LZw%7ExdVp1pBtCdm473fTXPn7X1aNCSLBhRMM%7EWhmhmeh-tNHcVFDpCJX182yxh89vA__&Key-Pair-Id=K24J24Z295AEI9"
+wget -O aim_3b_5bimgs_attnprobe_head_best_layers.pth <url of aim_3b_5bimgs_attnprobe_head_best_layers> # # the url can be found at https://github.com/apple/ml-aim/tree/main/aim-v1
 
 python feature_extract.py --input_path [your_image_root] --output_path [your_npy_root] --backbone_ckpt_path ./aim_3b_5bimgs_attnprobe_backbone.pth --head_ckpt_path ./aim_3b_5bimgs_attnprobe_head_best_layers.pth
 ```
@@ -51,7 +32,7 @@ python reconstruct.py --repo_id ./stable-diffusion-v1-4 --input_dir [your_real_i
 ```
 
 ## Train and Test
-We have extracted features of 10,000 real images and their reconstructed images, which are stored in `UAR/data` and can be used directly for training. 
+We have extracted features of 10,000 real images and their reconstructed images, which are stored in `./data` and can be used directly for training. 
 
 We provide test image features (.npy) in the following links:
 - Baidu Netdisk: [Download test image features from BaiduNetdisk](https://pan.baidu.com/s/1jFyLZ8sFNh2pN-sX9qUQDg?pwd=23pz).
